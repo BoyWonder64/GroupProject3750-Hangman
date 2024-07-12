@@ -1,24 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom'
 
-const Login = ({ setGame }) => {const [name, setName] = useState('');
+export default function Login(){
+    const [form, setForm] = useState({
+        username: ""
 
-    const startGame = async () => {
-        const response = await fetch('http://localhost:4000/start', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name })
+    });
+    
+    const navigate = useNavigate();
+
+    const updateForm = e => {
+        const { name, value } = e.target
+        setForm(prevForm => ({...prevForm,[name]: value}))
+      }
+    
+
+     const onSubmit = async e => {
+        e.preventDefault();
+        // const newPerson = {...form};
+        const response =  await fetch("http://localhost:4000/login", {
+            method: "POST",
+            headers: {"Content-Type" : "application/json"},
+            credentials: 'include',
+            body: JSON.stringify(form),
+        })
+        .catch(error => {
+            window.alert(error);
+            return
         });
-        const data = await response.json();
+
+        if(response.ok)
+        { //message says its valid navigate to next page
+          
+           navigate("/hangman");
+        } else {
+            window.alert("An error occured during the login process...")
+                 setForm({username: ""}); //clear the form
+        }
    
-    };
+    }
 
     return (
-        <div>
-            <p>This is the login screen</p>
+         <div>
+        <h2>Welcome to Hangman!</h2>
+        <h3>Please enter your username</h3>
+        <form onSubmit={onSubmit}>
+            <div>
+                <label>Username: </label>
+            <input
+                type="text"
+                name="username"
+                value={form.username}
+                onChange={updateForm}
+            />
+            </div>
+            <br/>
+            <input
+                type="submit"
+                value="Lets Play"
+            />
+        </form>
         </div>
     );
 };
-
-export default Login;

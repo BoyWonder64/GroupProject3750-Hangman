@@ -9,7 +9,8 @@ const { ObjectId } = require('mongodb')
 // This is the backend for the game screen. The majority of the game logic will happen here
 recordRoutes.get('/hangman', async (req, res) => {
   try {
-    const collection = db.collection('words'); 
+    const collection = db.collection('words');  
+    let username = req.body.username
 
    
   } catch (err) {

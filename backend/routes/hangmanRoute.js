@@ -1,16 +1,16 @@
 const express = require("express");
-const session = require('express-session'); //We may need session....
+ 
 const recordRoutes = express.Router();
 
 const dbo = require("../db/conn");
 
 const { ObjectId } = require('mongodb')
 
+
 // This is the backend for the game screen. The majority of the game logic will happen here
 recordRoutes.get('/hangman', async (req, res) => {
   try {
     const collection = db.collection('words');  
-    let username = req.body.username
 
    
   } catch (err) {
@@ -31,7 +31,9 @@ recordRoutes.get('/scores', async (req, res) => {
 recordRoutes.get('/login', async (req, res) => {
   try {
     const collection = db.collection('words'); 
-    const { name } = req.body;
+    const { username } = req.body;
+    req.session.username = req.body.username
+    console.log("The session username has been set to: " + req.session.username)
 
   } catch (err) {
     console.error('Error fetching message:', err);

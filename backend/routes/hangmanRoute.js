@@ -22,8 +22,6 @@ recordRoutes.get('/hangman', async (req, res) => {
 
 //This will display the score screen
 recordRoutes.get('/scores', async (req, res) => {
-  const { length } = req.query;
-  const scores = await scoresCollection.find({ length: parseInt(length) }).sort({ guesses: 1 }).limit(10).toArray(); //Display top ten scores and return it
   res.json(scores);
 });
 

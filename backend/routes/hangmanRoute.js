@@ -62,7 +62,7 @@ recordRoutes.get('/scores', async (req, res) => {
 })
 
 //We may want to set the word the player has to guess here.
-recordRoutes.route('/record/login').post(async (req, res) => {
+recordRoutes.route('/login').post(async (req, res) => {
   try {
     const {username} = req.body
     console.log("Entered Login Route")

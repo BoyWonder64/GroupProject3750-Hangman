@@ -25,8 +25,10 @@ recordRoutes.get('/hangman', async (req, res) => {
 
     const randomIndex = Math.floor(Math.random() * 1000) + 1;  //randomly picks a number between 1 and 1000
     const chosenWord = wordList[randomIndex]; //set the word based off of the index
-    let maskedWord = currentWord.replace(/[a-zA-Z]/g, '_'); // Mask all letters with underscores
 
+    let maskedWord = currentWord.replace(/[a-zA-Z]/g, '_'); // Mask all letters with underscores
+    //TODO
+    //We need to validate the guess each time one is made and change the _ to the correct letter if its correct
    
     // generate sessions for values
     req.session.word = chosenWord

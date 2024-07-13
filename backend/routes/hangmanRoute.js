@@ -11,6 +11,7 @@ recordRoutes.get('/hangman', async (req, res) => {
   try {
     let wordList
     const dbConnect = dbo.getDb()
+    //We probably want this in its own function and then we can use flags to validate 
     //Read in the file
     fs.readFile(wordsFilePath, 'utf8', (err) => {
       if (err) {
@@ -29,7 +30,7 @@ recordRoutes.get('/hangman', async (req, res) => {
     let maskedWord = currentWord.replace(/[a-zA-Z]/g, '_'); // Mask all letters with underscores
     //TODO
     //We need to validate the guess each time one is made and change the _ to the correct letter if its correct
-   
+    //This may need to be done in its own function that this route calls.
     // generate sessions for values
     req.session.word = chosenWord
     req.session.maskedWord = maskedWord

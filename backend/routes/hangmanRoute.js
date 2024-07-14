@@ -1,59 +1,105 @@
 const express = require('express')
 const recordRoutes = express.Router()
 const dbo = require('../db/conn')
-const path = require('path')
 //Used to read in file
-const fs = require('fs')
-const wordsFilePath = path.join(__dirname, '../words.csv')
+const fs = require('fs') // Use the promises API
+const wordsFilePath = 'words.csv'
 
 // This is the backend for the game screen. The majority of the game logic will happen here
-recordRoutes.get('/hangman', async (req, res) => {
+recordRoutes.get('/hangman', (req, res) => {
   try {
-    let wordList
-    const dbConnect = dbo.getDb()
-<<<<<<< HEAD
-    //We probably want this in its own function and then we can use flags to validate 
-    //Read in the file
-    fs.readFile(wordsFilePath, 'utf8', (err) => {
-      if (err) {
-        console.error('Error reading CSV file:', err);
-        return;
-      }
-      //Clean up the list
-      wordList = data.split('\n').map(word => word.trim())
-      console.log('Successfully loaded CSV File:', wordList);
-    });
     
-=======
->>>>>>> fd0b784ad7b0fdc2b87b4cfd216d3e8bfa0b64dd
+    if(!req.session.username){
+      console.log("Username session is not set!")
+      return res.status(501).json({error: "Username Session is not set"})
+    }
 
-    const data = await fs.readFile(wordsFilePath, 'utf8')
+    let wordList;
+    const dbConnect = dbo.getDb();
+    console.log("Entered Hangman Route");
+    console.log("The filepath is set to: " + wordsFilePath);
 
-    wordList = data.split('\n').map(word => word.trim())
-    console.log('Succesfully loaded CSV File: ', wordList)
+    fs.readFile(wordsFilePath, 'utf8', (err, data) => {
+      if (err) {
+        console.error('Error fetching message:', err);
+        return res.status(500).json({ error: 'Failed to fetch message' });
+      }
 
-    const randomIndex = Math.floor(Math.random() * 1000) + 1 //randomly picks a number between 1 and 1000
-    const chosenWord = wordList[randomIndex] //set the word based off of the index
+      wordList = data.split('\n').map(word => word.trim());
+      console.log('Successfully loaded CSV File:' )
 
-    let maskedWord = currentWord.replace(/[a-zA-Z]/g, '_') // Mask all letters with underscores
-    //TODO
-    //We need to validate the guess each time one is made and change the _ to the correct letter if its correct
-<<<<<<< HEAD
-    //This may need to be done in its own function that this route calls.
-=======
+      const randomIndex = Math.floor(Math.random() * 1000) + 1; // Randomly picks a number between 1 and 1000
+      const choosenWord = wordList[randomIndex]; // Set the word based off of the index
+      console.log("The choosen word is: " + choosenWord)
 
->>>>>>> fd0b784ad7b0fdc2b87b4cfd216d3e8bfa0b64dd
-    // generate sessions for values
-    req.session.word = chosenWord
-    req.session.maskedWord = maskedWord
-    req.session.incorrectGuesses = []
+      let maskedWord = choosenWord.replace(/[a-zA-Z]/g, '_'); // Mask all letters with underscores
 
-    res.json({ maskedWord })
+      req.session.word = choosenWord;
+      req.session.maskedWord = maskedWord;
+      req.session.incorrectGuesses = [];
+
+      res.json({ maskedWord });
+    });
   } catch (err) {
-    console.error('Error fetching message:', err)
-    res.status(500).json({ error: 'Failed to fetch message' })
+    console.error('Error fetching message:', err);
+    res.status(500).json({ error: 'Failed to fetch message' });
   }
+});
+
+
+recordRoutes.post("/guess" , (req, res) => {
+  console.log("Entered the guess route")
+
+  if(!req.session.username){
+    console.log("Username session is not set!")
+    return res.status(501).json({error: "Username Session is not set"})
+  }
+
+
+  let { word, maskedWord, incorrectGuesses } = req.session; //Set the session
+  let newMaskedword = "" 
+  let guessFlag = false; //Set the game flag
+  let {guess} = req.body
+
+ 
+  guess = guess.toLowerCase(); //set to lowercase because words in DB contains uppercased words
+  word = word.toLowerCase();
+
+  console.log("The guessed letter was: " + guess)
+  console.log("The choosen word is: " + req.session.word)
+
+  if (!guess || !/^[a-zA-Z]$/.test(guess)) { //Check if null or not a letter
+    return res.status(400).json({ error: 'Invalid letter' });
+  } 
+
+
+  for (let i = 0; i < word.length; i++) {
+    if (word[i] === guess) {
+      newMaskedword += guess; //adds letter to the new mask
+      guessFlag = true;
+    } else {
+      newMaskedword += maskedWord[i];
+    }
+  }
+  //Update the incorrect letter array
+  if (guessFlag === false) {
+    if(!incorrectGuesses.includes(guess)) { //if the array  does not includes the letter
+      incorrectGuesses.push(guess); //add it to the array
+    }
+  }
+   
+  //if the masked word is complete
+  if(word === newMaskedword){
+    console.log("The word has been guessed!")
+  }
+  //otherwise set the sessions 
+  req.session.maskedWord = newMaskedword;
+  req.session.incorrectGuesses = incorrectGuesses;
+  //and return the json back to the frontend
+  res.json({ maskedWord: newMaskedword, incorrectGuesses });
+
 })
+
 
 //This will display the score screen
 recordRoutes.get('/scores', async (req, res) => {
@@ -90,5 +136,6 @@ recordRoutes.route('/login').post(async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch message' })
   }
 })
+
 
 module.exports = recordRoutes

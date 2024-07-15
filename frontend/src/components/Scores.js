@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Scores = () => {
   const [scores, setScores] = useState([]);
   const wordLength = sessionStorage.getItem('wordLength');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -46,6 +48,7 @@ const Scores = () => {
           ))}
         </tbody>
       </table>
+      <button onClick={() => navigate('/hangman')}>Play Again</button>
     </div>
   )
 }

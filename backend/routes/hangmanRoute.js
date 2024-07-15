@@ -62,7 +62,6 @@ recordRoutes.post("/guess" , async (req, res) => {
 
   try {
     let { word, maskedWord, incorrectGuesses, allGuesses } = req.session; //Set the session
-    // let newMaskedword = "" 
     let {guess} = req.body;
     let message = '';
     let gameOver = false;
@@ -114,7 +113,7 @@ recordRoutes.post("/guess" , async (req, res) => {
     }
 
     // Checks for loss
-    if (incorrectGuesses.length === maxIncorrectGuesses) {
+    if (incorrectGuesses.length >= maxIncorrectGuesses) {
       gameOver = true;
     }   
   
@@ -128,45 +127,16 @@ recordRoutes.post("/guess" , async (req, res) => {
       }
       await scoresCollection.insertOne(score);
   
-      return res.json({ maskedWord, incorrectGuesses, gameOver, word, message: won ? 'You won!' : `Game over! The word was ${word}`  });
+      return res.json({ maskedWord, incorrectGuesses, gameOver, word, won, message: won ? 'You won!' : `Game over! The word was ${word}`  });
     }
-
   
-  
-    res.json({ maskedWord, incorrectGuesses, message });
+    res.json({ maskedWord, incorrectGuesses, won, gameOver, word, message });
   }
 
- catch (err) {
-  console.error('Error making guess:', err);
-  res.status(500).json({ error: 'Failed to process guess' });
-}
-
-
-//   for (let i = 0; i < word.length; i++) {
-//     if (word[i] === guess) {
-//       newMaskedword += guess; //adds letter to the new mask
-//       guessFlag = true;
-//     } else {
-//       newMaskedword += maskedWord[i];
-//     }
-//   }
-//   //Update the incorrect letter array
-//   if (guessFlag === false) {
-//     if(!incorrectGuesses.includes(guess)) { //if the array  does not includes the letter
-//       incorrectGuesses.push(guess); //add it to the array
-//     }
-//   }
-   
-//   //if the masked word is complete
-//   if(word === newMaskedword){
-//     console.log("The word has been guessed!")
-//   }
-//   //otherwise set the sessions 
-//   req.session.maskedWord = newMaskedword;
-//   req.session.incorrectGuesses = incorrectGuesses;
-//   //and return the json back to the frontend
-//   res.json({ maskedWord: newMaskedword, incorrectGuesses });
-
+  catch (err) {
+    console.error('Error making guess:', err);
+    res.status(500).json({ error: 'Failed to process guess' });
+  }
 })
 
 

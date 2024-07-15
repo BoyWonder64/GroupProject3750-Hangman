@@ -1,28 +1,29 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
 
 const Scores = () => {
-  const [scores, setScores] = useState([])
-  const wordLength = sessionStorage.getItem('wordLength')
+  const [scores, setScores] = useState([]);
+  const wordLength = sessionStorage.getItem('wordLength');
 
   useEffect(() => {
     const fetchScores = async () => {
       try {
         const response = await fetch(
-          `http://localhost:4000/api/scores?length=${wordLength}`,
+          `http://localhost:4000/scores?length=${wordLength}`,
           {
             method: 'GET',
             credentials: 'include'
           }
         )
-        const data = await response.json()
-        setScores(data)
+        const data = await response.json();
+        console.log("Fetched scores: ", data);
+        setScores(data);
       } catch (err) {
-        console.error('Error fetching scores:', err)
+        console.error('Error fetching scores:', err);
       }
     }
 
-    fetchScores()
-  }, [wordLength])
+    fetchScores();
+  }, [wordLength]);
 
   return (
     <div>
@@ -38,7 +39,7 @@ const Scores = () => {
         <tbody>
           {scores.map((score, index) => (
             <tr key={index}>
-              <td>{score.name}</td>
+              <td>{score.username}</td>
               <td>{score.guesses}</td>
               <td>{score.wordLength}</td>
             </tr>

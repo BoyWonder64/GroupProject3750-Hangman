@@ -18,7 +18,7 @@ export default function Login(){
      const onSubmit = async e => {
         e.preventDefault();
         // const newPerson = {...form};
-        const response =  await fetch("http://localhost:4000/login", {
+        const response =  await fetch("http://localhost:4000/api/login", {
             method: "POST",
             headers: {"Content-Type" : "application/json"},
             credentials: 'include',

@@ -35,7 +35,7 @@ app.use(
 app.use(express.json())
 
 //Routes
-app.use(require('./routes/hangmanRoute'))
+app.use('/api', require('./routes/hangmanRoute'))
 
 // Start Server
 app.listen(port, () => {

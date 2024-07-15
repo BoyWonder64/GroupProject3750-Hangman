@@ -1,6 +1,6 @@
 import React from 'react'
 import { Route, Routes } from 'react-router-dom'
-import Hangman from './components/hangman.js'
+import Hangman from './components/Hangman.js'
 import Scores from './components/Scores.js'
 import Login from './components/login.js'
 

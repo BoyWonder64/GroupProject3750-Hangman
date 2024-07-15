@@ -5,6 +5,8 @@ const Hangman = () => {
   const [maskedWord, setMaskedWord] = useState('')
   const [guess, setGuess] = useState('')
   const [incorrectGuesses, setIncorrectGuesses] = useState([])
+  const [allGuesses, setalltGuesses] = useState([])
+  const [message, setMessage] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -47,19 +49,34 @@ const Hangman = () => {
       }
 
       if (response.ok){
-        setMaskedWord(data.maskedWord)
-        setIncorrectGuesses(data.incorrectGuesses)
+        setMaskedWord(data.maskedWord);
+        setIncorrectGuesses(data.incorrectGuesses);
+        setalltGuesses(data.allGuesses);
+        setGuess(" ");
       }
       if(response.status === 400){
         window.alert("Invalid Entry, please enter in a letter")
       }
-      if (!data.maskedWord.includes('_')) {
-        navigate('/scores');
+      if(response.status === 401){
+        window.alert("Letter already guessed")
       }
+
+      // TODO: Implement score page - need button to click if !won
+      // if (data.gameOver && won) {
+      //   sessionStorage.setItem('wordLength', data.word.length)
+      //   navigate('/scores', { state: { word: data.word } })
+      //   return
+      // }
+
+      setMessage(data.message || '')
+
+      // if (!data.maskedWord.includes('_')) {
+      //   navigate('/scores');
+      // }
     } catch (err) {
       console.error('Error making guess:', err)
     }
-    setGuess("")
+
   };
   return (
     <div>
@@ -73,6 +90,7 @@ const Hangman = () => {
       />
       <button onClick={handleGuess}>Guess</button>
       <p>Incorrect Guesses: {incorrectGuesses.join(', ')}</p>
+      {message && <p>{message}</p>}
     </div>
   )
 }

@@ -5,6 +5,9 @@ const dbo = require('../db/conn')
 const fs = require('fs') // Use the promises API
 const wordsFilePath = 'words.csv'
 
+// Set max for incorrect guesses
+const maxIncorrectGuesses = 6
+
 // This is the backend for the game screen. The majority of the game logic will happen here
 recordRoutes.get('/hangman', (req, res) => {
   try {
@@ -29,14 +32,16 @@ recordRoutes.get('/hangman', (req, res) => {
       console.log('Successfully loaded CSV File:' )
 
       const randomIndex = Math.floor(Math.random() * 1000) + 1; // Randomly picks a number between 1 and 1000
-      const choosenWord = wordList[randomIndex]; // Set the word based off of the index
-      console.log("The choosen word is: " + choosenWord)
+      const chosenWord = wordList[randomIndex]; // Set the word based off of the index
+      console.log("The choosen word is: " + chosenWord)
 
-      let maskedWord = choosenWord.replace(/[a-zA-Z]/g, '_'); // Mask all letters with underscores
+      let maskedWord = '_ '.repeat(chosenWord.length).trim() // Mask all letters with underscores
 
-      req.session.word = choosenWord;
+      req.session.word = chosenWord;
       req.session.maskedWord = maskedWord;
       req.session.incorrectGuesses = [];
+      req.session.allGuesses = [];
+      req.session.totalGuesses = 0;
 
       res.json({ maskedWord });
     });
@@ -47,56 +52,120 @@ recordRoutes.get('/hangman', (req, res) => {
 });
 
 
-recordRoutes.post("/guess" , (req, res) => {
-  console.log("Entered the guess route")
+recordRoutes.post("/guess" , async (req, res) => {
+  console.log("Entered the guess route");
 
   if(!req.session.username){
-    console.log("Username session is not set!")
-    return res.status(501).json({error: "Username Session is not set"})
+    console.log("Username session is not set!");
+    return res.status(501).json({error: "Username Session is not set"});
   }
 
-
-  let { word, maskedWord, incorrectGuesses } = req.session; //Set the session
-  let newMaskedword = "" 
-  let guessFlag = false; //Set the game flag
-  let {guess} = req.body
-
- 
-  guess = guess.toLowerCase(); //set to lowercase because words in DB contains uppercased words
-  word = word.toLowerCase();
-
-  console.log("The guessed letter was: " + guess)
-  console.log("The choosen word is: " + req.session.word)
-
-  if (!guess || !/^[a-zA-Z]$/.test(guess)) { //Check if null or not a letter
-    return res.status(400).json({ error: 'Invalid letter' });
-  } 
-
-
-  for (let i = 0; i < word.length; i++) {
-    if (word[i] === guess) {
-      newMaskedword += guess; //adds letter to the new mask
-      guessFlag = true;
-    } else {
-      newMaskedword += maskedWord[i];
+  try {
+    let { word, maskedWord, incorrectGuesses, allGuesses } = req.session; //Set the session
+    // let newMaskedword = "" 
+    let {guess} = req.body;
+    let message = '';
+    let gameOver = false;
+    let won = false;
+  
+    guess = guess.toLowerCase(); //set to lowercase because words in DB contains uppercased words
+    word = word.toLowerCase();
+  
+    console.log("The guessed letter was: " + guess);
+    console.log("The choosen word is: " + req.session.word);
+    console.log("The maskedWord is: " + req.session.maskedWord);
+  
+    if (!guess || !/^[a-zA-Z]$/.test(guess)) { //Check if null or not a letter
+      return res.status(400).json({ error: 'Invalid letter' });
+    } 
+  
+    // Check if guess is already in  incorrectGuesses
+    if (allGuesses.includes(guess)) {
+      return res.status(401).json({ error: 'Letter already guessed' });
     }
-  }
-  //Update the incorrect letter array
-  if (guessFlag === false) {
-    if(!incorrectGuesses.includes(guess)) { //if the array  does not includes the letter
-      incorrectGuesses.push(guess); //add it to the array
+  
+    // Check if the guess is in word
+    if (word.includes(guess)) {
+      // Update the masked word with the correct guess
+      maskedWord = maskedWord.split(' ').map((char, index) => {
+        return word[index] === guess ? guess : char; // Replace underscore with correct guess, keeping spacing
+      }).join(' ');
+      req.session.maskedWord = maskedWord; // Store updated masked word in session
+      message = 'Correct guess!';
+    } 
+    else {
+      // Add the incorrect guess to list
+      incorrectGuesses.push(guess);
+      req.session.incorrectGuesses = incorrectGuesses;
+      message = 'Incorrect guess!';
     }
+  
+    allGuesses.push(guess);
+    req.session.allGuesses = allGuesses;
+    req.session.totalGuesses += 1;
+  
+    // Removes spaces added
+    const fixedMaskedWord = maskedWord.replace(/ /g, '');
+    
+    // Checks for win
+    if (fixedMaskedWord === word) {
+      won = true;
+      gameOver = true;
+    }
+
+    // Checks for loss
+    if (incorrectGuesses.length === maxIncorrectGuesses) {
+      gameOver = true;
+    }   
+  
+    if (gameOver) {
+      // Save score to the database
+      const scoresCollection = dbo.getDb().collection('scores');
+      const score = {
+        username: req.session.username,
+        guesses: req.session.totalGuesses,
+        wordLength: word.length,
+      }
+      await scoresCollection.insertOne(score);
+  
+      return res.json({ maskedWord, incorrectGuesses, gameOver, word, message: won ? 'You won!' : `Game over! The word was ${word}`  });
+    }
+
+  
+  
+    res.json({ maskedWord, incorrectGuesses, message });
   }
+
+ catch (err) {
+  console.error('Error making guess:', err);
+  res.status(500).json({ error: 'Failed to process guess' });
+}
+
+
+//   for (let i = 0; i < word.length; i++) {
+//     if (word[i] === guess) {
+//       newMaskedword += guess; //adds letter to the new mask
+//       guessFlag = true;
+//     } else {
+//       newMaskedword += maskedWord[i];
+//     }
+//   }
+//   //Update the incorrect letter array
+//   if (guessFlag === false) {
+//     if(!incorrectGuesses.includes(guess)) { //if the array  does not includes the letter
+//       incorrectGuesses.push(guess); //add it to the array
+//     }
+//   }
    
-  //if the masked word is complete
-  if(word === newMaskedword){
-    console.log("The word has been guessed!")
-  }
-  //otherwise set the sessions 
-  req.session.maskedWord = newMaskedword;
-  req.session.incorrectGuesses = incorrectGuesses;
-  //and return the json back to the frontend
-  res.json({ maskedWord: newMaskedword, incorrectGuesses });
+//   //if the masked word is complete
+//   if(word === newMaskedword){
+//     console.log("The word has been guessed!")
+//   }
+//   //otherwise set the sessions 
+//   req.session.maskedWord = newMaskedword;
+//   req.session.incorrectGuesses = incorrectGuesses;
+//   //and return the json back to the frontend
+//   res.json({ maskedWord: newMaskedword, incorrectGuesses });
 
 })
 

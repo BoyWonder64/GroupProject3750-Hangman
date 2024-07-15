@@ -5,7 +5,9 @@ const Hangman = () => {
   const [maskedWord, setMaskedWord] = useState('')
   const [guess, setGuess] = useState('')
   const [incorrectGuesses, setIncorrectGuesses] = useState([])
-  const [allGuesses, setalltGuesses] = useState([])
+  const [won, setWon] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [word, setWord] = useState('');
   const [message, setMessage] = useState('')
   const navigate = useNavigate()
 
@@ -51,8 +53,11 @@ const Hangman = () => {
       if (response.ok){
         setMaskedWord(data.maskedWord);
         setIncorrectGuesses(data.incorrectGuesses);
-        setalltGuesses(data.allGuesses);
-        setGuess(" ");
+        setGuess("");
+        setWon(data.won);
+        setGameOver(data.gameOver);
+        setWord(data.word);
+        setMessage(data.message);
       }
       if(response.status === 400){
         window.alert("Invalid Entry, please enter in a letter")
@@ -61,23 +66,18 @@ const Hangman = () => {
         window.alert("Letter already guessed")
       }
 
-      // TODO: Implement score page - need button to click if !won
-      // if (data.gameOver && won) {
-      //   sessionStorage.setItem('wordLength', data.word.length)
-      //   navigate('/scores', { state: { word: data.word } })
-      //   return
-      // }
-
-      setMessage(data.message || '')
-
-      // if (!data.maskedWord.includes('_')) {
-      //   navigate('/scores');
-      // }
     } catch (err) {
       console.error('Error making guess:', err)
     }
-
   };
+
+    useEffect(() => {
+      if (gameOver && won) {
+        sessionStorage.setItem('wordLength', word.length);
+        navigate('/scores', { state: { word } });
+      }
+    }, [gameOver, won, word, navigate]);
+
   return (
     <div>
       <h1>Hangman Game</h1>
@@ -91,6 +91,11 @@ const Hangman = () => {
       <button onClick={handleGuess}>Guess</button>
       <p>Incorrect Guesses: {incorrectGuesses.join(', ')}</p>
       {message && <p>{message}</p>}
+      {gameOver && !won && (
+        <button onClick={() => navigate('/scores', { state: { word } })}>
+        View High Scores
+      </button>
+      )}
     </div>
   )
 }
